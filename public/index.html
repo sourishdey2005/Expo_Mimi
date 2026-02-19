@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Library Seat Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <nav class="p-6 bg-slate-800 border-b border-slate-700 shadow-lg">
+        <h1 class="text-2xl font-bold text-center text-cyan-400">Smart Library Prototype</h1>
+    </nav>
+
+    <main class="container mx-auto p-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            
+            <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 flex flex-col items-center">
+                <h2 class="text-lg font-medium text-slate-400 mb-6 uppercase tracking-widest">Seat 101 Status</h2>
+                
+                <div id="status-indicator" class="w-40 h-40 rounded-full flex items-center justify-center border-8 border-slate-700 transition-all duration-700">
+                    <span id="display-status" class="text-xl font-black">WAITING</span>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <p class="text-slate-500">Live Weight Reading</p>
+                    <p class="text-4xl font-mono text-cyan-300"><span id="display-weight">0.0</span> <span class="text-sm">g</span></p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700">
+                <h2 class="text-lg font-medium text-slate-400 mb-4 uppercase tracking-widest">Activity Log</h2>
+                <div id="log-container" class="h-64 overflow-y-auto space-y-2 font-mono text-sm pr-2">
+                    <div class="text-slate-500 italic">System initialized...</div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const socket = io();
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('display-status');
+        const weightText = document.getElementById('display-weight');
+        const logContainer = document.getElementById('log-container');
+
+        socket.on('seatUpdate', (data) => {
+            // Update Weight and Text
+            weightText.innerText = data.weight;
+            statusText.innerText = data.status;
+
+            // Logic for Color Changes based on your prototype requirements
+            // Reset classes
+            indicator.className = "w-40 h-40 rounded-full flex items-center justify-center border-8 transition-all duration-700 ";
+            
+            if (data.status === "EMPTY") {
+                indicator.classList.add("border-green-500", "bg-green-500/10", "text-green-500");
+            } else if (data.status === "PARTIALLY") {
+                indicator.classList.add("border-yellow-500", "bg-yellow-500/10", "text-yellow-500");
+            } else { // FULL
+                indicator.classList.add("border-red-500", "bg-red-500/10", "text-red-500", "pulse");
+            }
+
+            // Log the event
+            const entry = document.createElement('div');
+            entry.className = "p-2 bg-slate-700/50 rounded border-l-4 border-cyan-500 mb-2";
+            entry.innerHTML = `<span class="text-cyan-400">[${data.time}]</span> ${data.status} - ${data.weight}g`;
+            logContainer.prepend(entry);
+        });
+    </script>
+</body>
+</html>
